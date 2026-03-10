@@ -116,7 +116,7 @@ def realizar_download():
                 'progress_hooks': [hook_progresso],
                 'nocolor': True,
             }
-        
+
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(link_video, download=False)
             video_title = info_dict.get('title', None)
