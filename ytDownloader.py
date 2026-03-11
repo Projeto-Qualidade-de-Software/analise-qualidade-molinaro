@@ -18,7 +18,7 @@ import yt_dlp
 import os
 from time import strftime
 import fpdf  # Biblioteca para gerar PDF
-import re  # Biblioteca para sanitizar nomes de arquivos
+import re  # Biblioteca para sanitizar nomes de arquivos.
 
 # Cole sua chave de API do DeepSeek aqui
 DEEPSEEK_API_KEY = "suachaveapi"
