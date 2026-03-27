@@ -108,8 +108,6 @@ def gerar_pdf(diretorio_destino, video_title, thumbnail_path, transcricao):
     except Exception as e:
         label_status.configure(text=f"Erro ao criar PDF: {str(e)}", text_color="red")
 
-    except Exception as e:
-        label_status.configure(text=f"Erro ao criar PDF: {str(e)}", text_color="red")
 
 def realizar_download():
     try:
