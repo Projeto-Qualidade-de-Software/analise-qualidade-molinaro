@@ -28,11 +28,13 @@ def selecionar_diretorio():
     try:
         diretorio_destino = filedialog.askdirectory()
         if not diretorio_destino:
-            raise Exception("Nenhum diretório selecionado.")
+            # Substituímos Exception por ValueError
+            raise ValueError("Nenhum diretório selecionado.")
         label_diretorio.configure(text=f"Diretório selecionado:{diretorio_destino}",
         text_color="white")
         return diretorio_destino
-    except Exception as e:
+    # É uma boa prática também ser específico no except, se possível
+    except ValueError as e: 
         label_diretorio.configure(text=str(e), text_color="red")
         raise  # Lança a exceção para ser tratada no download
 
