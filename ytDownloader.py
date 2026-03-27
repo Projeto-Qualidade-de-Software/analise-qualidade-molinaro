@@ -87,6 +87,11 @@ def gerar_pdf(diretorio_destino, video_title, thumbnail_path, transcricao):
         pdf.set_font("Arial", size=24, style="B")
         pdf.cell(200, 10, txt=video_title, ln=True, align='C')
 
+        # Adicionar a imagem (thumbnail) se ela existir
+        if thumbnail_path:
+            # Pode ajustar o x, y e w (largura) para centrar a imagem como preferir
+            pdf.image(thumbnail_path, x=55, y=25, w=100)
+
         # Adicionar a transcrição
         pdf.set_font("Arial", size=12)
         pdf.ln(85)  # Pula linhas para não sobrepor a imagem
@@ -99,6 +104,9 @@ def gerar_pdf(diretorio_destino, video_title, thumbnail_path, transcricao):
         pdf_output_path = os.path.join(diretorio_destino, f"{video_title_sanitized}.pdf")
         pdf.output(pdf_output_path)
         label_status.configure(text=f"PDF criado: {pdf_output_path}", text_color="green")
+
+    except Exception as e:
+        label_status.configure(text=f"Erro ao criar PDF: {str(e)}", text_color="red")
 
     except Exception as e:
         label_status.configure(text=f"Erro ao criar PDF: {str(e)}", text_color="red")
