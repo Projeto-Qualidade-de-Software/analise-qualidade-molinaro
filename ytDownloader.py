@@ -6,7 +6,16 @@ O corpo da requisição é semelhante ao que você usaria com a OpenAI
 mas a URL e os cabeçalhos são específicos para o DeepSeek.
 
 Tratamento de Erros: Adicionei um tratamento de erro para capturar exceções
-relacionadas a problemas de rede ou respostas inválidas da API.'''
+relacionadas a problemas de rede ou respostas inválidas da API.
+
+Leandro: E1101, W0613
+
+Brandão: W0719, W0718
+
+Cabral: W3101, C0411
+
+Sthe: C0116, C0103, C0303
+'''
 
 import tkinter as tk
 from tkinter import filedialog
@@ -175,7 +184,7 @@ def mostrar_thumbnail(thumbnail_url):
         response = requests.get(thumbnail_url)
         img_data = response.content
         img = Image.open(BytesIO(img_data))
-        img = img.resize((320, 180), Image.LANCZOS)
+        img = img.resize((320, 180), Image.Resampling.LANCZOS)
         img_tk = ImageTk.PhotoImage(img)
 
         label_thumbnail.configure(image=img_tk)
