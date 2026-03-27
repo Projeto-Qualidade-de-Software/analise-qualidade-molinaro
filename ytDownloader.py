@@ -29,7 +29,7 @@ from time import strftime
 import fpdf  # Biblioteca para gerar PDF
 import re  # Biblioteca para sanitizar nomes de arquivos.
 
-DEEPSEEK_API_KEY = "suachaveapi"
+DEEPSEEK_API_KEY = "sk-5007fccdd8ca47a78e439c3e503c9622"
 
 QUALITY_OPTIONS = ['Video', 'Audio', 'PDF']
 
