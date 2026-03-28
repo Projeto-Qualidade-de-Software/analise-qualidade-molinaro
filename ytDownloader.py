@@ -109,8 +109,13 @@ def gerar_pdf(diretorio_destino, video_title, thumbnail_path, transcricao):
         pdf.output(pdf_output_path)
         label_status.configure(text=f"PDF criado: {pdf_output_path}", text_color="green")
 
-    except Exception as e:
-        label_status.configure(text=f"Erro ao criar PDF: {str(e)}", text_color="red")
+    except OSError as e:
+        # Captura erros de sistema operacional (como falta de permissão ou disco cheio)
+        label_status.configure(text=f"Erro de sistema ao salvar PDF: {str(e)}", text_color="red")
+    except UnicodeEncodeError as e:
+        # A biblioteca FPDF pode falhar se a transcrição tiver emojis ou caracteres muito especiais
+        label_status.configure(text="Erro de formatação: Texto possui caracteres incompatíveis.",
+                               text_color="red")
 
 
 def realizar_download():
@@ -174,9 +179,20 @@ def realizar_download():
                 # Download de vídeo ou áudio
                 ydl.download([link_video])
 
-    except Exception as e:
-        label_status.configure(text=f"Erro: {str(e)}", text_color="red")
-        print(e)
+    except ValueError as e:
+        # Captura erros de validação (ex: link vazio ou diretório não selecionado)
+        label_status.configure(text=f"Aviso: {str(e)}", text_color="orange")
+        print(f"Erro de Validação: {e}")
+    except yt_dlp.utils.DownloadError as e:
+        # Captura erros específicos do YouTube (link quebrado, vídeo privado, etc)
+        label_status.configure(text="Erro no YouTube: Verifique o link ou sua conexão.",
+                                text_color="red")
+        print(f"Erro no yt_dlp: {e}")
+    except OSError as e:
+        # Captura erros do sistema (ex: sem permissão para salvar na pasta)
+        label_status.configure(text="Erro no sistema: Não foi possível salvar o arquivo.",
+                                text_color="red")
+        print(f"Erro de Sistema Operacional: {e}")
 
 def hook_progresso(d):
     """"Atualiza a barra de progresso e o rótulo de porcentagem durante o download."""
@@ -204,9 +220,14 @@ def mostrar_thumbnail(thumbnail_url):
 
         label_thumbnail.configure(image=img_tk)
         label_thumbnail.image = img_tk
-    except Exception as e:
-        label_status.configure(text="Erro ao carregar thumbnail", text_color="red")
-        print(f"Erro ao carregar a thumbnail: {e}")
+    except requests.exceptions.RequestException as e:
+        # Falha de conexão/internet ao tentar acessar a imagem
+        label_status.configure(text="Erro de rede ao carregar thumbnail", text_color="red")
+        print(f"Erro de rede (Thumbnail): {e}")
+    except OSError as e:
+        # A biblioteca PIL falhou ao tentar ler os bytes da imagem
+        label_status.configure(text="Erro ao processar imagem da thumbnail", text_color="red")
+        print(f"Erro de imagem (Thumbnail): {e}")
 
 def baixar_thumbnail(thumbnail_url, diretorio_destino):
     """"Baixa a thumbnail do vídeo e salva no diretório de destino,
@@ -217,8 +238,9 @@ def baixar_thumbnail(thumbnail_url, diretorio_destino):
         with open(thumbnail_path, 'wb') as f:
             f.write(response.content)
         return thumbnail_path
-    except Exception as e:
-        label_status.configure(text=f"Erro ao baixar a thumbnail: {str(e)}", text_color="red")
+    except requests.exceptions.RequestException as e:
+        label_status.configure(text=f"Erro de conexão ao baixar thumbnail: {str(e)}",
+                                text_color="red")
         return None
 
 # Inicialização da interface
