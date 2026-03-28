@@ -16,6 +16,7 @@ Cabral: W3101, C0411
 
 Sthe: C0116, C0103, C0303
 '''
+# pylint: disable=invalid-name
 
 import tkinter as tk
 from tkinter import filedialog
@@ -44,7 +45,7 @@ def selecionar_diretorio():
         text_color="white")
         return diretorio_destino
     # É uma boa prática também ser específico no except, se possível
-    except ValueError as e: 
+    except ValueError as e:
         label_diretorio.configure(text=str(e), text_color="red")
         raise  # Lança a exceção para ser tratada no download
 
@@ -208,7 +209,8 @@ def mostrar_thumbnail(thumbnail_url):
         print(f"Erro ao carregar a thumbnail: {e}")
 
 def baixar_thumbnail(thumbnail_url, diretorio_destino):
-    """"Baixa a thumbnail do vídeo e salva no diretório de destino, retornando o caminho do arquivo salvo."""
+    """"Baixa a thumbnail do vídeo e salva no diretório de destino,
+    retornando o caminho do arquivo salvo."""
     try:
         response = requests.get(thumbnail_url)
         thumbnail_path = os.path.join(diretorio_destino, 'thumbnail.jpg')
@@ -238,7 +240,7 @@ entrada_link = customtkinter.CTkEntry(janela, width=550, height=40, textvariable
 entrada_link.pack(pady=10)
 
 combobox_var = customtkinter.StringVar(value='Video')
-combobox = customtkinter.CTkComboBox(janela, 
+combobox = customtkinter.CTkComboBox(janela,
                                      values=QUALITY_OPTIONS,
                                      variable=combobox_var, width=250)
 combobox.pack(pady=15)
