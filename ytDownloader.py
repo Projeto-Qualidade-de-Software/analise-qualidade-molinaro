@@ -28,8 +28,17 @@ import os
 from time import strftime
 import fpdf  # Biblioteca para gerar PDF
 import re  # Biblioteca para sanitizar nomes de arquivos.
+from dotenv import load_dotenv
 
-DEEPSEEK_API_KEY = "suachaveapi"
+# Carrega as variáveis de ambiente do arquivo .env
+load_dotenv()
+
+# Puxa a chave da variável de ambiente
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+
+# Uma boa prática é adicionar uma verificação rápida
+if not DEEPSEEK_API_KEY:
+    raise ValueError("A chave da API do DeepSeek não foi encontrada. Verifique se o arquivo .env existe e está configurado corretamente.")
 
 QUALITY_OPTIONS = ['Video', 'Audio', 'PDF']
 
