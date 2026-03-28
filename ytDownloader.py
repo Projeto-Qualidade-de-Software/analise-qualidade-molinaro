@@ -34,6 +34,7 @@ DEEPSEEK_API_KEY = "suachaveapi"
 QUALITY_OPTIONS = ['Video', 'Audio', 'PDF']
 
 def selecionar_diretorio():
+    """Permite ao usuário selecionar um diretório para salvar os arquivos baixados."""
     try:
         diretorio_destino = filedialog.askdirectory()
         if not diretorio_destino:
@@ -48,6 +49,7 @@ def selecionar_diretorio():
         raise  # Lança a exceção para ser tratada no download
 
 def transcrever_video(video_title, video_description):
+    """Faz uma chamada para a API do DeepSeek para obter a transcrição do vídeo."""
     try:
         # Configuração da chamada para a API do DeepSeek
         headers = {
@@ -75,10 +77,11 @@ def transcrever_video(video_title, video_description):
         return f"Erro ao transcrever o vídeo: {e}"
 
 def sanitize_filename(filename):
-    # Remove ou substitui caracteres inválidos para nomes de arquivos no Windows
+    """Remove ou substitui caracteres inválidos para nomes de arquivos no Windows"""
     return re.sub(r'[\\/*?:"<>|]', "", filename)
 
 def gerar_pdf(diretorio_destino, video_title, thumbnail_path, transcricao):
+    """"Gera um PDF com o título do vídeo, a thumbnail e a transcrição."""
     try:
         pdf = fpdf.FPDF()
         pdf.add_page()
@@ -110,6 +113,7 @@ def gerar_pdf(diretorio_destino, video_title, thumbnail_path, transcricao):
 
 
 def realizar_download():
+    """"Realiza o download do vídeo ou áudio"""
     try:
         link_video = entrada_link.get()
 
@@ -174,6 +178,7 @@ def realizar_download():
         print(e)
 
 def hook_progresso(d):
+    """"Atualiza a barra de progresso e o rótulo de porcentagem durante o download."""
     if d['status'] == 'downloading':
         if d.get('total_bytes') and d.get('downloaded_bytes'):
             porcentagem = d['downloaded_bytes'] / d['total_bytes'] * 100
@@ -188,6 +193,7 @@ def hook_progresso(d):
         label_status.configure(text="Download Concluído!", text_color="white")
 
 def mostrar_thumbnail(thumbnail_url):
+    """Exibe a thumbnail do vídeo na interface."""
     try:
         response = requests.get(thumbnail_url)
         img_data = response.content
@@ -202,6 +208,7 @@ def mostrar_thumbnail(thumbnail_url):
         print(f"Erro ao carregar a thumbnail: {e}")
 
 def baixar_thumbnail(thumbnail_url, diretorio_destino):
+    """"Baixa a thumbnail do vídeo e salva no diretório de destino, retornando o caminho do arquivo salvo."""
     try:
         response = requests.get(thumbnail_url)
         thumbnail_path = os.path.join(diretorio_destino, 'thumbnail.jpg')
@@ -257,6 +264,7 @@ barra_progresso.pack_forget()
 
 # Relógio no canto inferior direito
 def mostrar_relogio():
+    """Atualiza o rótulo do relógio a cada segundo."""
     horario_atual = strftime('%H:%M:%S')
     label_relogio.configure(text=horario_atual)
     label_relogio.after(1000, mostrar_relogio)
