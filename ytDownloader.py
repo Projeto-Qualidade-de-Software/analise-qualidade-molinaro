@@ -18,18 +18,21 @@ Sthe: C0116, C0103, C0303
 '''
 # pylint: disable=invalid-name
 
-import tkinter as tk
-from tkinter import filedialog
-from PIL import Image, ImageTk
-import requests
-from io import BytesIO
-import customtkinter
-import yt_dlp
+# 1. Bibliotecas Padrão do Python (Standard Libraries)
 import os
+import re  # Biblioteca para sanitizar nomes de arquivos
+import tkinter as tk
+from io import BytesIO
 from time import strftime
+from tkinter import filedialog
+
+# 2. Bibliotecas de Terceiros (Third-party Libraries)
+import customtkinter
 import fpdf  # Biblioteca para gerar PDF
-import re  # Biblioteca para sanitizar nomes de arquivos.
+import requests
+import yt_dlp
 from dotenv import load_dotenv
+from PIL import Image, ImageTk
 
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
