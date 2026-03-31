@@ -31,18 +31,8 @@ import customtkinter
 import fpdf  # Biblioteca para gerar PDF
 import requests
 import yt_dlp
-from dotenv import load_dotenv
 from PIL import Image, ImageTk
-
-# Carrega as variáveis de ambiente do arquivo .env
-load_dotenv()
-
-# Puxa a chave da variável de ambiente
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-
-# Uma boa prática é adicionar uma verificação rápida
-if not DEEPSEEK_API_KEY:
-    raise ValueError("A chave da API do DeepSeek não foi encontrada. Verifique se o arquivo .env existe e está configurado corretamente.")
+from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
 
 QUALITY_OPTIONS = ['Video', 'Audio', 'PDF']
 
@@ -51,45 +41,42 @@ def selecionar_diretorio():
     try:
         diretorio_destino = filedialog.askdirectory()
         if not diretorio_destino:
-            # Substituímos Exception por ValueError
             raise ValueError("Nenhum diretório selecionado.")
         label_diretorio.configure(text=f"Diretório selecionado:{diretorio_destino}",
         text_color="white")
         return diretorio_destino
-    # É uma boa prática também ser específico no except, se possível
     except ValueError as e:
         label_diretorio.configure(text=str(e), text_color="red")
-        raise  # Lança a exceção para ser tratada no download
+        raise  
 
-def transcrever_video(video_title, video_description):
-    """Faz uma chamada para a API do DeepSeek para obter a transcrição do vídeo."""
+def obter_transcricao(video_id):
+    """Obtém a legenda (automática ou manual) diretamente do YouTube."""
     try:
-        # Configuração da chamada para a API do DeepSeek
-        headers = {
-            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-            "Content-Type": "application/json"
-        }
-        data = {
-            "prompt": (
-                f"Título: {video_title}\n"
-                f"Descrição: {video_description}\n"
-                "Gere um resumo e uma transcrição organizada."
-            ),
-            "max_tokens": 1500,
-            "temperature": 0.7,
-}
-        # Timeout de 30s adicionado para evitar o congelamento da interface caso a API demore a responder (Fix Pylint W3101)
-        response = requests.post(
-            "https://api.deepseek.com/v1/completions",  # URL da API do DeepSeek
-            headers=headers,
-            json=data,
-            timeout=30
-        )
-        response.raise_for_status()
-        transcricao = response.json()['choices'][0]['text'].strip()
-        return transcricao
-    except requests.exceptions.RequestException as e:
-        return f"Erro ao transcrever o vídeo: {e}"
+        # Nas versões mais recentes da biblioteca, é necessário instanciar a API
+        ytt_api = YouTubeTranscriptApi()
+        
+        # Puxa a lista de todas as transcrições disponíveis para o vídeo
+        transcript_list = ytt_api.list(video_id)
+        
+        # Procura pela legenda em Português ou Inglês
+        transcript = transcript_list.find_transcript(['pt', 'pt-BR', 'en'])
+        
+        # Faz o download (fetch) do conteúdo da legenda encontrada
+        transcript_data = transcript.fetch()
+        
+        # Concatena os blocos de texto da legenda numa única string
+        texto_completo = " ".join([item.text for item in transcript_data])
+        
+        # Remove quebras de linha que vêm por padrão na legenda
+        texto_completo = texto_completo.replace('\n', ' ')
+        
+        return texto_completo
+    except TranscriptsDisabled:
+        return "Erro: As legendas estão desativadas para este vídeo."
+    except NoTranscriptFound:
+        return "Erro: Nenhuma legenda em português ou inglês foi encontrada neste vídeo."
+    except Exception as e:
+        return f"Erro ao obter a legenda do vídeo: {str(e)}"
 
 def sanitize_filename(filename):
     """Remove ou substitui caracteres inválidos para nomes de arquivos no Windows"""
@@ -103,17 +90,22 @@ def gerar_pdf(diretorio_destino, video_title, thumbnail_path, transcricao):
 
         # Adicionar título
         pdf.set_font("Arial", size=24, style="B")
-        pdf.cell(200, 10, txt=video_title, ln=True, align='C')
+        
+        # Sanitizar título para o PDF suportar os caracteres
+        titulo_pdf = video_title.encode('latin-1', 'ignore').decode('latin-1')
+        pdf.cell(200, 10, txt=titulo_pdf, ln=True, align='C')
 
         # Adicionar a imagem (thumbnail) se ela existir
         if thumbnail_path:
-            # Pode ajustar o x, y e w (largura) para centrar a imagem como preferir
             pdf.image(thumbnail_path, x=55, y=25, w=100)
+
+        # Tratar a transcrição para remover emojis e caracteres que o FPDF não suporta (latin-1)
+        transcricao_limpa = transcricao.encode('latin-1', 'ignore').decode('latin-1')
 
         # Adicionar a transcrição
         pdf.set_font("Arial", size=12)
         pdf.ln(85)  # Pula linhas para não sobrepor a imagem
-        pdf.multi_cell(0, 10, transcricao)
+        pdf.multi_cell(0, 10, transcricao_limpa)
 
         # Sanitizar o título do vídeo para usá-lo como nome do arquivo
         video_title_sanitized = sanitize_filename(video_title)
@@ -131,9 +123,8 @@ def gerar_pdf(diretorio_destino, video_title, thumbnail_path, transcricao):
         label_status.configure(text="Erro de formatação: Texto possui caracteres incompatíveis.",
                                text_color="red")
 
-
 def realizar_download():
-    """"Realiza o download do vídeo ou áudio"""
+    """"Realiza o download do vídeo ou áudio e opcionalmente gera o PDF"""
     try:
         link_video = entrada_link.get()
 
@@ -145,21 +136,21 @@ def realizar_download():
         ydl_opts = {}
         if combobox_var.get() == 'Video':
             ydl_opts = {
-                'format': 'best[ext=mp4]',  # Melhor vídeo em MP4
+                'format': 'best[ext=mp4]',  
                 'outtmpl': os.path.join(diretorio_destino, '%(title)s.%(ext)s'),
                 'progress_hooks': [hook_progresso],
                 'nocolor': True,
             }
         elif combobox_var.get() == 'Audio':
             ydl_opts = {
-                'format': 'bestaudio[ext=m4a]',  # Melhor áudio em M4A
+                'format': 'bestaudio[ext=m4a]',  
                 'outtmpl': os.path.join(diretorio_destino, '%(title)s.%(ext)s'),
                 'progress_hooks': [hook_progresso],
                 'nocolor': True,
             }
         elif combobox_var.get() == 'PDF':
             ydl_opts = {
-                'format': 'best[ext=mp4]',  # Melhor vídeo para transcrição
+                'format': 'best[ext=mp4]',  
                 'outtmpl': os.path.join(diretorio_destino, '%(title)s.%(ext)s'),
                 'progress_hooks': [hook_progresso],
                 'nocolor': True,
@@ -168,14 +159,13 @@ def realizar_download():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(link_video, download=False)
             video_title = info_dict.get('title', None)
-            video_description = info_dict.get('description', 'Descrição indisponível')
+            video_id = info_dict.get('id', None) # Necessário para buscar a legenda
             thumbnail_url = info_dict.get('thumbnail', None)
 
             label_titulo.configure(text=video_title, text_color="white")
 
-            # Se for a opção PDF, fazer a transcrição e gerar o PDF
             if combobox_var.get() == 'PDF':
-                # Baixar o vídeo primeiro
+                # Baixar o vídeo
                 ydl.download([link_video])
 
                 # Baixar a thumbnail
@@ -183,8 +173,8 @@ def realizar_download():
                 if thumbnail_url:
                     thumbnail_path = baixar_thumbnail(thumbnail_url, diretorio_destino)
 
-                # Gerar a transcrição
-                transcricao = transcrever_video(video_title, video_description)
+                # Obter a legenda original do YouTube (sem uso de IA)
+                transcricao = obter_transcricao(video_id)
 
                 # Gerar o PDF
                 gerar_pdf(diretorio_destino, video_title, thumbnail_path, transcricao)
@@ -226,8 +216,7 @@ def hook_progresso(d):
 def mostrar_thumbnail(thumbnail_url):
     """Exibe a thumbnail do vídeo na interface."""
     try:
-        # Adicionado timeout de 10s para evitar o travamento da UI via requests.get (Fix Pylint W3101)
-        response = requests.get(thumbnail_url, timeout=10)
+        response = requests.get(thumbnail_url)
         img_data = response.content
         img = Image.open(BytesIO(img_data))
         img = img.resize((320, 180), Image.Resampling.LANCZOS)
@@ -245,11 +234,9 @@ def mostrar_thumbnail(thumbnail_url):
         print(f"Erro de imagem (Thumbnail): {e}")
 
 def baixar_thumbnail(thumbnail_url, diretorio_destino):
-    """"Baixa a thumbnail do vídeo e salva no diretório de destino,
-    retornando o caminho do arquivo salvo."""
+    """"Baixa a thumbnail do vídeo e salva no diretório de destino."""
     try:
-        # Adicionado timeout de 10s ao baixar a miniatura da thumbnail
-        response = requests.get(thumbnail_url, timeout=10)
+        response = requests.get(thumbnail_url)
         thumbnail_path = os.path.join(diretorio_destino, 'thumbnail.jpg')
         with open(thumbnail_path, 'wb') as f:
             f.write(response.content)
