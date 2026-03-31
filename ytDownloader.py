@@ -47,29 +47,28 @@ def selecionar_diretorio():
         return diretorio_destino
     except ValueError as e:
         label_diretorio.configure(text=str(e), text_color="red")
-        raise  
-
+        raise
 def obter_transcricao(video_id):
     """Obtém a legenda (automática ou manual) diretamente do YouTube."""
     try:
         # Nas versões mais recentes da biblioteca, é necessário instanciar a API
         ytt_api = YouTubeTranscriptApi()
-        
+
         # Puxa a lista de todas as transcrições disponíveis para o vídeo
         transcript_list = ytt_api.list(video_id)
-        
+
         # Procura pela legenda em Português ou Inglês
         transcript = transcript_list.find_transcript(['pt', 'pt-BR', 'en'])
-        
+
         # Faz o download (fetch) do conteúdo da legenda encontrada
         transcript_data = transcript.fetch()
-        
+
         # Concatena os blocos de texto da legenda numa única string
         texto_completo = " ".join([item.text for item in transcript_data])
-        
+
         # Remove quebras de linha que vêm por padrão na legenda
         texto_completo = texto_completo.replace('\n', ' ')
-        
+
         return texto_completo
     except TranscriptsDisabled:
         return "Erro: As legendas estão desativadas para este vídeo."
@@ -90,7 +89,7 @@ def gerar_pdf(diretorio_destino, video_title, thumbnail_path, transcricao):
 
         # Adicionar título
         pdf.set_font("Arial", size=24, style="B")
-        
+
         # Sanitizar título para o PDF suportar os caracteres
         titulo_pdf = video_title.encode('latin-1', 'ignore').decode('latin-1')
         pdf.cell(200, 10, txt=titulo_pdf, ln=True, align='C')
@@ -136,21 +135,21 @@ def realizar_download():
         ydl_opts = {}
         if combobox_var.get() == 'Video':
             ydl_opts = {
-                'format': 'best[ext=mp4]',  
+                'format': 'best[ext=mp4]',
                 'outtmpl': os.path.join(diretorio_destino, '%(title)s.%(ext)s'),
                 'progress_hooks': [hook_progresso],
                 'nocolor': True,
             }
         elif combobox_var.get() == 'Audio':
             ydl_opts = {
-                'format': 'bestaudio[ext=m4a]',  
+                'format': 'bestaudio[ext=m4a]',
                 'outtmpl': os.path.join(diretorio_destino, '%(title)s.%(ext)s'),
                 'progress_hooks': [hook_progresso],
                 'nocolor': True,
             }
         elif combobox_var.get() == 'PDF':
             ydl_opts = {
-                'format': 'best[ext=mp4]',  
+                'format': 'best[ext=mp4]',
                 'outtmpl': os.path.join(diretorio_destino, '%(title)s.%(ext)s'),
                 'progress_hooks': [hook_progresso],
                 'nocolor': True,
